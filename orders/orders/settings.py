@@ -57,6 +57,34 @@ ROOT_URLCONF = 'orders.urls'
 
 AUTH_USER_MODEL = 'api.User'
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_USE_TLS = True
+
+EMAIL_HOST = 'smtp.mail.ru'
+
+EMAIL_HOST_USER = 'netology.diplom@mail.ru'
+EMAIL_HOST_PASSWORD = 'CLdm7yW4U9nivz9mbexu'
+EMAIL_PORT = '465'
+EMAIL_USE_SSL = True
+SERVER_EMAIL = EMAIL_HOST_USER
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 40,
+
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+
+    ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -74,6 +102,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'orders.wsgi.application'
+
+EMAIL_HOST_USER = 'admin@admin.ru'
 
 
 # Database
