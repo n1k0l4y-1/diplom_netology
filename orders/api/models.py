@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django_rest_passwordreset.tokens import get_token_generator
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -86,6 +87,43 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = "Список пользователей"
         ordering = ('email',)
+
+
+class ConfirmEmailToken(models.Model):
+    class Meta:
+        verbose_name = 'Токен подтверждения Email'
+        verbose_name_plural = 'Токены подтверждения Email'
+
+    @staticmethod
+    def generate_key():
+        return get_token_generator().generate_token()
+
+    user = models.ForeignKey(
+        User,
+        related_name='confirm_email_tokens',
+        on_delete=models.CASCADE,
+        verbose_name="The User which is associated to this password reset token"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="When was this token generated"
+    )
+
+    key = models.CharField(
+        "Key",
+        max_length=64,
+        db_index=True,
+        unique=True
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super(ConfirmEmailToken, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return "Password reset token for user {user}".format(user=self.user)
 
 
 class Contact(models.Model):
@@ -206,4 +244,32 @@ class OrderItem(models.Model):
         verbose_name_plural = "Список заказанных позиций"
         constraints = [
             models.UniqueConstraint(fields=['order_id', 'product_info'], name='unique_order_item'),
+        ]
+
+
+class Parameter(models.Model):
+    name = models.CharField(max_length=40, verbose_name='Название')
+
+    class Meta:
+        verbose_name = 'Имя параметра'
+        verbose_name_plural = "Список имен параметров"
+        ordering = ('-name',)
+
+    def __str__(self):
+        return self.name
+
+
+class ProductParameter(models.Model):
+    product_info = models.ForeignKey(ProductInfo, verbose_name='Информация о продукте',
+                                     related_name='product_parameters', blank=True,
+                                     on_delete=models.CASCADE)
+    parameter = models.ForeignKey(Parameter, verbose_name='Параметр', related_name='product_parameters', blank=True,
+                                  on_delete=models.CASCADE)
+    value = models.CharField(verbose_name='Значение', max_length=100)
+
+    class Meta:
+        verbose_name = 'Параметр'
+        verbose_name_plural = "Список параметров"
+        constraints = [
+            models.UniqueConstraint(fields=['product_info', 'parameter'], name='unique_product_parameter'),
         ]
