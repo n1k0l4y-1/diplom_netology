@@ -1,4 +1,3 @@
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db.models import Q
@@ -13,14 +12,15 @@ from .serializers import UserSerializer, ContactSerializer
 
 
 class RegisterAccount(APIView):
+
     """
-    Класс для регистрации покупателей.
+    Класс регистрации покупателей.
     """
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод проверяет наличие обязательных полей, сложность пароля,
-        уникальность имени пользователя, после чего сохраняет пользователя в системе.
+        Проверка наличия полей на уникальность и сложность пароля.
         """
 
         if {'first_name', 'last_name', 'email', 'password', 'company', 'position'}.issubset(request.data):
@@ -28,7 +28,6 @@ class RegisterAccount(APIView):
                 validate_password(request.data['password'])
             except Exception as password_error:
                 error_array = []
-                # noinspection PyTypeChecker
                 for item in password_error:
                     error_array.append(item)
                 return Response({'Status': False, 'Errors': {'password': error_array}}, status=403)
@@ -42,10 +41,9 @@ class RegisterAccount(APIView):
                     user.set_password(request.data['password'])
                     user.save()
 
-                    # Отправка письма с подтверждением почты.
+                    # Отправление на подтверждение почты.
                     token, _ = ConfirmEmailToken.objects.get_or_create(user_id=user.id)
-                    title = f'Подтверждение регистрации пользователя: {token.user.email}' #
-
+                    title = f'Регистрация пользователя подтверждена: {token.user.email}'  #
 
                     token, _ = ConfirmEmailToken.objects.get_or_create(user_id=user.pk)
 
@@ -67,21 +65,23 @@ class RegisterAccount(APIView):
                                      'Errors': user_serializer.errors}, status=422)
 
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'}, status=401) #
+                         'Errors': 'Не введены все обязательные параметры'}, status=401)
 
 
 class ConfirmAccount(APIView):
+
     """
-    Класс для подтверждения почтового адреса.
+    Класс подтверждения почтового адреса.
     """
 
     throttle_scope = 'anon'
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод проверяет наличие обязательных полей, статус токена и адреса почты,
-        после чего подтверждает регистрацию пользователя в системе.
+        Проверка на наличие статуса токена, обязательных полей и почты.
         """
+
         if {'email', 'token'}.issubset(request.data):
             token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
                                                      key=request.data['token']).first()
@@ -92,23 +92,26 @@ class ConfirmAccount(APIView):
                 return Response({'Status': True})
             else:
                 return Response({'Status': False,
-                                 'Errors': 'Неправильно указан токен или email'})
+                                 'Errors': 'Токен или адрес e-mail указаны неверно'})
 
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'})
+                         'Errors': 'Отсутствуют обязательные аргументы'})
 
 
 class AccountDetails(APIView):
+
     """
-    Класс для работы данными пользователя.
+    Класс работы c данными пользователя.
     """
 
     throttle_scope = 'user'
 
     def get(self, request, *args, **kwargs):
+
         """
-        Метод позволяет получить данные о пользователе.
+        Получение данных о пользователе.
         """
+
         if not request.user.is_authenticated:
             return Response({'Status': False,
                              'Error': 'Log in required'}, status=403)
@@ -118,17 +121,19 @@ class AccountDetails(APIView):
 
 
 class LoginAccount(APIView):
+
     """
-    Класс для авторизации пользователей.
+    Класс авторизации пользователей.
     """
 
     throttle_scope = 'anon'
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод позволяет произвести авторизацию пользователя.
-        Проверяет обязательные поля (пароль и email), после чего создает токен для пользователя.
+        Произведение авторизацию пользователя.
         """
+
         if {'email', 'password'}.issubset(request.data):
             user = authenticate(request, username=request.data['email'], password=request.data['password'])
             if user is not None:
@@ -137,21 +142,22 @@ class LoginAccount(APIView):
                     return Response({'Status': True, 'Token': token.key}, status=200)
 
             return Response({'Status': False,
-                             'Errors': 'Не удалось авторизовать'}, status=403)
+                             'Errors': 'Авторизация не удалась'}, status=403)
 
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'}, status=401)
+                         'Errors': 'Отсутствуют обязательные аргументы'}, status=401)
 
 
 class ContactView(APIView):
-    """ Класс для работы с контактами покупателей. """
+
+    """ Класс работы с контактами покупателей. """
 
     throttle_scope = 'user'
 
     def get(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию,
-        после чего выдает информацию о контактных данных покупателя.
+        Проверка авторизации.
         """
 
         if not request.user.is_authenticated:
@@ -162,9 +168,9 @@ class ContactView(APIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию,
-        после чего добавляет информацию о новых контактных данных покупателя.
+        Проверка авторизации.
         """
 
         if not request.user.is_authenticated:
@@ -183,13 +189,14 @@ class ContactView(APIView):
                           'Errors': serializer.errors})
 
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'}, status=401)
+                         'Errors': 'Отсутствуют обязательные аргументы'}, status=401)
 
     def put(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию,
-        после чего обновляет информацию о контактных данных покупателя.
+        Проверка авторизации.
         """
+
         if not request.user.is_authenticated:
             return Response({'Status': False, 'Error': 'Log in required'}, status=403)
 
@@ -207,12 +214,12 @@ class ContactView(APIView):
                                   'Errors': serializer.errors})
 
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'}, status=400)
+                         'Errors': 'Отсутствуют обязательные аргументы'}, status=400)
 
     def delete(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию,
-        после чего удаляет информацию о контактных дынных покупателя.
+        Проверка авторизации.
         """
 
         if not request.user.is_authenticated:
@@ -233,8 +240,8 @@ class ContactView(APIView):
             if objects_deleted:
                 deleted_count = Contact.objects.filter(query).delete()[0]
                 return Response({'Status': True,
-                                 'Удалено объектов': deleted_count},
+                                 'Объектов удалено': deleted_count},
                                 status=200)
         return Response({'Status': False,
-                         'Errors': 'Не указаны все необходимые аргументы'},
+                         'Errors': 'Отсутствуют обязательные аргументы'},
                         status=400)
