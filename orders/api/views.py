@@ -251,14 +251,14 @@ class ContactView(APIView):
 
 
 class OrderView(APIView):
-    """ Класс для получения и размещения заказов пользователями. """
+
+    """ Класс получения и размещения заказов. """
 
     throttle_scope = 'user'
 
     def get(self, request, *args, **kwargs):
         """
-        Метод проверяет авторизацию,
-        после чего выдает информацию о заказе.
+        Проверка авторизации.
         """
 
         if not request.user.is_authenticated:
@@ -276,9 +276,9 @@ class OrderView(APIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию,
-        после чего размещает информацию о заказе.
+        Проверка авторизации.
         """
 
         if not request.user.is_authenticated:
@@ -295,12 +295,12 @@ class OrderView(APIView):
                         state='new')
                 except IntegrityError:
                     return JsonResponse({'Status': False,
-                                         'Errors': 'Неправильно указаны аргументы'})
+                                         'Errors': 'Неверные аргументы'})
                 else:
                     if is_updated:
                         # Отправка письма при изменении статуса заказа.
                         user = User.objects.get(id=request.user.id)
-                        title = 'Уведомление о смене статуса заказа'
+                        title = 'Статус заказа сменился'
                         message = 'Заказ сформирован.'
                         msg = EmailMultiAlternatives(
                             # title:
@@ -317,18 +317,19 @@ class OrderView(APIView):
                         return JsonResponse({'Status': True})
 
         return JsonResponse({'Status': False,
-                             'Errors': 'Не указаны все необходимые аргументы'})
+                             'Errors': 'Отсутствуют обязательные аргументы'})
 
 
 class PartnerOrders(APIView):
-    """ Класс для получения заказов поставщиками. """
+
+    """ Класс получения заказов поставщиками. """
 
     throttle_scope = 'user'
 
     def get(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию и тип пользователя (для работы требуется тип 'shop'),
-        после чего получает информацию о заказе.
+        Проверка авторизации и тип пользователя.
         """
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False,
@@ -354,14 +355,15 @@ class PartnerOrders(APIView):
 
 
 class BasketView(APIView):
-    """ Класс для работы с корзиной пользователя. """
+
+    """ Класс работы с корзиной пользователя. """
 
     throttle_scope = 'user'
 
     def get(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию пользователя,
-        после чего возвращает информацию о товарах в корзине.
+        Проверка авторизации пользователя.
         """
 
         if not request.user.is_authenticated:
@@ -380,9 +382,9 @@ class BasketView(APIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию пользователя,
-        после чего создает для него корзину и добавляет в неё информацию о товарах.
+        Проверка авторизации пользователя.
         """
 
         if not request.user.is_authenticated:
@@ -417,14 +419,14 @@ class BasketView(APIView):
                                       'Errors': serializer.errors})
 
                 return JsonResponse({'Status': True,
-                                     'Создано объектов': objects_created})
+                                     'Объектов создано': objects_created})
         return JsonResponse({'Status': False,
-                             'Errors': 'Не указаны все необходимые аргументы'})
+                             'Errors': 'Отсутствуют обязательные аргументы'})
 
     def put(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию пользователя,
-        после чего обновляет информацию о товарах в корзине.
+        Проверка авторизации пользователя.
         """
 
         if not request.user.is_authenticated:
@@ -447,14 +449,14 @@ class BasketView(APIView):
                             quantity=order_item['quantity'])
 
                 return JsonResponse({'Status': True,
-                                     'Обновлено объектов': objects_updated})
+                                     'Объектов обновлено': objects_updated})
         return JsonResponse({'Status': False,
-                             'Errors': 'Не указаны все необходимые аргументы'})
+                             'Errors': 'Отсутствуют обязательные аргументы'})
 
     def delete(self, request, *args, **kwargs):
+
         """
-        Метод проверяет авторизацию пользователя,
-        после чего удаляет информацию о товаре (товарах) в корзине.
+        Проверка авторизации пользователя.
         """
 
         if not request.user.is_authenticated:
@@ -475,27 +477,27 @@ class BasketView(APIView):
             if objects_deleted:
                 deleted_count = OrderItem.objects.filter(query).delete()[0]
                 return JsonResponse({'Status': True,
-                                     'Удалено объектов': deleted_count})
+                                     'Объектов удалено': deleted_count})
         return JsonResponse({'Status': False,
-                             'Errors': 'Не указаны все необходимые аргументы'})
+                             'Errors': 'Отсутствуют обязательные аргументы'})
 
 
 class CategoryView(ListAPIView):
-    """Класс для просмотра категорий"""
+    """Класс просмотра категорий"""
 
     queryset = Category.objects.filter(shops__state=True)
     serializer_class = CategorySerializer
 
 
 class ShopView(ListAPIView):
-    """Класс для просмотра списка магазинов"""
+    """Класс просмотра магазинов"""
 
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer
 
 
 class ProductInfoView(ModelViewSet):
-    """Класс для поиска товаров"""
+    """Класс поиска товаров"""
 
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
@@ -510,7 +512,7 @@ class ProductInfoView(ModelViewSet):
 
 
 class SellerUpdateCatalog(APIView):
-    """Класс для обновления каталога от продавца"""
+    """Класс обновления каталога продавцом"""
 
     permission_classes = [IsAuthenticated, IsShopUser]
 
@@ -518,7 +520,7 @@ class SellerUpdateCatalog(APIView):
         url = request.data.get('url')
 
         if not url:
-            return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+            return JsonResponse({'Status': False, 'Errors': 'Отсутствуют обязательные аргументы'})
         validate_url = URLValidator()
 
         try:
@@ -529,14 +531,13 @@ class SellerUpdateCatalog(APIView):
             stream = requests.get(url).content
             data = load_yaml(stream, Loader=Loader)
 
-            # Если у пользователя нет магазина - создать
+            # Если у пользователя нет магазина, то он создает
             if not Shop.objects.filter(user_id=request.user.id).exists():
                 shop = Shop.objects.create(name=data['shop'], user_id=request.user.id)
-            # Иначе получить магазин
             else:
                 shop = Shop.objects.get(user_id=request.user.id)
 
-            # И обновить название
+            # Обновление названия
             shop.name = data['shop']
             shop.save()
 
@@ -574,22 +575,23 @@ class SellerUpdateCatalog(APIView):
 
 
 class SellerState(APIView):
-    """Класс для работы со статусом продавца"""
+
+    """Класс работы со статусом продавца"""
 
     permission_classes = [IsAuthenticated, IsShopUser]
 
-    # Получить текущий статус
+    # Получить статус
     def get(self, request, *args, **kwargs):
         shop = request.user.shop
         serializer = ShopSerializer(shop)
         return Response(serializer.data)
 
-    # Изменить текущий статус
+    # Изменить статус
     def post(self, request, *args, **kwargs):
         state = request.data.get('state')
 
         if not state:
-            return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+            return JsonResponse({'Status': False, 'Errors': 'Отсутствуют обязательные аргументы'})
         try:
             Shop.objects.filter(user_id=request.user.id).update(state=strtobool(state))
             return JsonResponse({'Status': True})
